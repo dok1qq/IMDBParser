@@ -99,10 +99,33 @@ namespace IMDBParser
             if (filmTextID.Text != "")
             {
                 table.Clear();
+                filmImage.Hide();
 
                 HtmlWeb webId = new HtmlWeb();
-                var doc = webId.Load("http://www.imdb.com/title/" + filmTextID.Text);
+                showInformationOfFilm(webId.Load("http://www.imdb.com/title/" + filmTextID.Text));
+            }
 
+        }
+
+        void SearchInfoButtonEventHandler(object sender, EventArgs e)
+        {
+            table.Clear();
+            filmImage.Hide();
+
+            HtmlWeb webId = new HtmlWeb();
+            HtmlAgilityPack.HtmlDocument doc = webId.Load("http://www.imdb.com/find?ref_=nv_sr_fn&q=" + searchTextInfo.Text + "&s=all");
+            if (doc != null)
+            {
+                HtmlNodeCollection recieveHrefFirstFilm = doc.DocumentNode.SelectNodes("//*[@id='main']/div/div[2]/table/tbody/tr[1]/td[1]");
+                //*[@id="main"]/div/div[2]/table/tbody/tr[1]/td[1]/a
+                //var a = recieveHrefFirstFilm.InnerText;
+            }
+        }
+
+        void showInformationOfFilm(HtmlAgilityPack.HtmlDocument doc)
+        {
+            if (doc != null)
+            {
                 HtmlNode recieveTitle = doc.DocumentNode.SelectSingleNode(title);
                 HtmlNode recieveRating = doc.DocumentNode.SelectSingleNode(rating);
                 //HtmlNodeCollection recieveDescription = doc.DocumentNode.SelectNodes(description);
@@ -126,17 +149,6 @@ namespace IMDBParser
 
                 recieceInfo.DataSource = table;
             }
-
-        }
-
-        void SearchInfoButtonEventHandler(object sender, EventArgs e)
-        {
-            filmImage.Hide();
-            table.Clear();
-
-            HtmlWeb webId = new HtmlWeb();
-            var doc = webId.Load("http://www.imdb.com/find?q=" + searchTextInfo.Text);
-            //*[@id="main"]/div/div[2]/table/tbody/tr[1]/td[1]/a
         }
     }
 }
