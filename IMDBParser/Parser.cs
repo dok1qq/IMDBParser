@@ -22,16 +22,16 @@ namespace IMDBParser
 
         private string title = "//*[@id='title-overview-widget']/div[2]/div[2]/div/div[2]/div[2]/h1";
         private string rating = "//*[@id='title-overview-widget']/div[2]/div[2]/div/div[1]/div[1]/div[1]/strong/span";
-        //string description = "//*[@id='title-overview-widge']/div[3]/div[1]/div[1]";
+        private string description = "//*[@id='title-overview-widge']/div[3]/div[1]/div[1]";
         private string creator = "//*[@id='title-overview-widget']/div[3]/div[1]/div[2]/span/a/span";
-        private string stars = "//*[@id='title-overview-widget']/div[3]/div[1]/div[3]";
-        private string fImage = "//*[@id='title-overview-widget']/div[2]/div[4]/div[1]/a/img/@src";
+        private string fImage = "//*[@class='poster']/a";
+        //private string stars = "//*[@id='title-overview-widget']/div[3]/div[1]/div[3]";
 
         public Parser()
         {
             this.Text = "IMDBParser";
             this.StartPosition  = FormStartPosition.CenterScreen;
-            this.Size = new Size(1000,500);
+            this.Size = new Size(990,360);
             this.BackColor = Color.FromArgb(255,51,51,51);
 
             filmLabel = new Label();
@@ -40,11 +40,11 @@ namespace IMDBParser
             filmLabel.Size = new System.Drawing.Size(200, 13);
 
             filmTextID = new TextBox();
-            filmTextID.Location = new System.Drawing.Point(237, 54);
+            filmTextID.Location = new System.Drawing.Point(32, 80);
             filmTextID.Size = new System.Drawing.Size(159, 20);
 
             filmInfo = new Button();
-            filmInfo.Location = new System.Drawing.Point(402, 54);
+            filmInfo.Location = new System.Drawing.Point(200, 80);
             filmInfo.Size = new System.Drawing.Size(85, 20);
             filmInfo.Text = "Get";
             filmInfo.Click += new System.EventHandler(GetInfoButtonEventHandler);
@@ -55,26 +55,24 @@ namespace IMDBParser
             searchLabel.Size = new System.Drawing.Size(200, 13);
 
             searchTextInfo = new TextBox();
-            searchTextInfo.Location = new System.Drawing.Point(237, 135);
+            searchTextInfo.Location = new System.Drawing.Point(32, 161);
             searchTextInfo.Size = new System.Drawing.Size(159, 20);
 
             searchInfo = new Button();
-            searchInfo.Location = new System.Drawing.Point(402, 133);
+            searchInfo.Location = new System.Drawing.Point(200, 161);
             searchInfo.Size = new System.Drawing.Size(85, 23);
             searchInfo.Text = "Search";
             searchInfo.Click += new System.EventHandler(SearchInfoButtonEventHandler);
 
             recieceInfo = new DataGridView();
             recieceInfo.Location = new System.Drawing.Point(575, 27);
-            recieceInfo.Size = new System.Drawing.Size(370, 400);
+            recieceInfo.Size = new System.Drawing.Size(370, 268);
             recieceInfo.Name = "SomeName";
 
             filmImage = new PictureBox();
-            filmImage.Location = new System.Drawing.Point(300, 170);
+            filmImage.Location = new System.Drawing.Point(360, 27);
             filmImage.Size = new System.Drawing.Size(182, 268);
-            filmImage.BackColor = Color.Aqua;
-            filmImage.Load("https://images-na.ssl-images-amazon.com/images/M/MV5BNzUwMDEyMTIxM15BMl5BanBnXkFtZTgwNDU3OTYyODE@._V1_UX182_CR0,0,182,268_AL_.jpg");
-            //filmImage.Hide();
+            filmImage.BackColor = Color.DimGray;
 
             table = new DataTable("Film info");
             table.Columns.Add("Name", typeof(string));
@@ -144,24 +142,37 @@ namespace IMDBParser
             if (doc != null)
             {
                 HtmlNode recieveTitle = doc.DocumentNode.SelectSingleNode(title);
+                if (recieveTitle != null)
+                {
+                    table.Rows.Add("Title", recieveTitle.InnerHtml);
+                }
+
                 HtmlNode recieveRating = doc.DocumentNode.SelectSingleNode(rating);
-                //HtmlNodeCollection recieveDescription = doc.DocumentNode.SelectNodes(description);
+                if (recieveRating != null)
+                {
+                    table.Rows.Add("Rating", recieveRating.InnerHtml);
+                }
+
+                HtmlNode recieveDescription = doc.DocumentNode.SelectSingleNode(description);
+                if (recieveDescription != null)
+                {
+                    table.Rows.Add("Desctiption", recieveDescription.InnerHtml);
+                }
+
                 HtmlNode recieveCreator = doc.DocumentNode.SelectSingleNode(creator);
-                HtmlNodeCollection recieveStars = doc.DocumentNode.SelectNodes(stars);
-                //HtmlNode recieveImage = doc.DocumentNode.SelectSingleNode(fImage);
+                if (recieveCreator != null)
+                {
+                    table.Rows.Add("Creator", recieveCreator.InnerHtml);
+                }
 
-                //var col1 = recieveDescription.Select(node => node.InnerText);
-                //var recStars = recieveStars.Select(node => node.InnerText);
-                //var l = recieveImage["href"].Value;
-
-                
-
-                table.Rows.Add("Title", recieveTitle.InnerHtml);
-                table.Rows.Add("Rating", recieveRating.InnerHtml);
-                //table.Rows.Add("Description", recieveDescription.InnerHtml);
-                table.Rows.Add("Creator", recieveCreator.InnerHtml);
-                //table.Rows.Add("Srats", recStars);
-                filmImage.Show();
+                HtmlNode recieveImage = doc.DocumentNode.SelectSingleNode(fImage);
+                if (recieveImage != null)
+                {
+                    string sImg = recieveImage.InnerHtml;
+                    String[] substrings = sImg.Split('"');
+                    filmImage.Load(substrings[5]);
+                    filmImage.Show();
+                }
 
                 recieceInfo.DataSource = table;
             }
