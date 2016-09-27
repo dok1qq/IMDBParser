@@ -20,12 +20,12 @@ namespace IMDBParser
         private DataGridView recieceInfo;
         private DataTable table;
 
-        private string title = "//*[@id='title-overview-widget']/div[2]/div[2]/div/div[2]/div[2]/h1";
-        private string rating = "//*[@id='title-overview-widget']/div[2]/div[2]/div/div[1]/div[1]/div[1]/strong/span";
-        private string description = "//*[@id='title-overview-widge']/div[3]/div[1]/div[1]";
-        private string creator = "//*[@id='title-overview-widget']/div[3]/div[1]/div[2]/span/a/span";
+        private string title = "//*[@itemprop='name']";
+        private string rating = "//*[@itemprop='ratingValue']";
+        private string description = "//*[@itemprop='description']";
+        private string creator = "//*[@itemprop='creator']/a/span";
         private string fImage = "//*[@class='poster']/a";
-        //private string stars = "//*[@id='title-overview-widget']/div[3]/div[1]/div[3]";
+        private string nImage = "//*[@class='image']/a";
 
         public Parser()
         {
@@ -98,7 +98,7 @@ namespace IMDBParser
         {
             if (filmTextID.Text != "")
             {
-                showInformationOfFilm(filmTextID.Text);
+                showInformationOfFilm("title", filmTextID.Text);
             }
 
         }
@@ -111,52 +111,40 @@ namespace IMDBParser
             HtmlAgilityPack.HtmlDocument doc = web.Load("http://www.imdb.com/find?ref_=nv_sr_fn&q=" + searchTextInfo.Text + "&s=all");
             if (doc != null)
             {
-                foreach (HtmlNode tab in doc.DocumentNode.SelectNodes("//*[@id='main']/div/div[2]/table"))
-                {
-                    foreach (HtmlNode row in tab.SelectNodes("tr"))
-                    {
-                        foreach (HtmlNode cell in row.SelectNodes("th|td"))
-                        {
-                            string text = cell.InnerHtml;
-                            String[] substrings = text.Split('/');
+                HtmlNode cell = doc.DocumentNode.SelectSingleNode("//*[@class='findList']").SelectSingleNode("tr").SelectSingleNode("th|td");
+                string text = cell.InnerHtml;
+                string[] substrings = text.Split('/');
 
-                            showInformationOfFilm(substrings[2]);
-                            break;
-                        }
-                        break;
-                    }
-                    break;
-                }
-
+                showInformationOfFilm(substrings[1], substrings[2]);
             }
         }
 
-        void showInformationOfFilm(string url)
+        void showInformationOfFilm(string property, string id)
         {
             table.Clear();
             filmImage.Hide();
             HtmlWeb webId = new HtmlWeb();
 
-            HtmlAgilityPack.HtmlDocument doc = webId.Load("http://www.imdb.com/title/" + url);
+            HtmlAgilityPack.HtmlDocument doc = webId.Load("http://www.imdb.com/" + property + "/" + id);
 
             if (doc != null)
             {
                 HtmlNode recieveTitle = doc.DocumentNode.SelectSingleNode(title);
                 if (recieveTitle != null)
                 {
-                    table.Rows.Add("Title", recieveTitle.InnerHtml);
+                    table.Rows.Add("Title", recieveTitle.InnerText);
                 }
 
                 HtmlNode recieveRating = doc.DocumentNode.SelectSingleNode(rating);
                 if (recieveRating != null)
                 {
-                    table.Rows.Add("Rating", recieveRating.InnerHtml);
+                    table.Rows.Add("Rating", recieveRating.InnerText);
                 }
 
                 HtmlNode recieveDescription = doc.DocumentNode.SelectSingleNode(description);
                 if (recieveDescription != null)
                 {
-                    table.Rows.Add("Desctiption", recieveDescription.InnerHtml);
+                    table.Rows.Add("Desctiption", recieveDescription.InnerText);
                 }
 
                 HtmlNode recieveCreator = doc.DocumentNode.SelectSingleNode(creator);
@@ -165,14 +153,29 @@ namespace IMDBParser
                     table.Rows.Add("Creator", recieveCreator.InnerHtml);
                 }
 
-                HtmlNode recieveImage = doc.DocumentNode.SelectSingleNode(fImage);
-                if (recieveImage != null)
+                if (property.Equals("title"))
                 {
-                    string sImg = recieveImage.InnerHtml;
-                    String[] substrings = sImg.Split('"');
-                    filmImage.Load(substrings[5]);
-                    filmImage.Show();
+                    HtmlNode recieveImage = doc.DocumentNode.SelectSingleNode(fImage);
+                    if (recieveImage != null)
+                    {
+                        string sImg = recieveImage.InnerHtml;
+                        string[] substrings = sImg.Split('"');
+                        filmImage.Load(substrings[5]);
+                        filmImage.Show();
+                    }
                 }
+
+                if (property.Equals("name"))
+                {
+                    HtmlNode recieveImage = doc.DocumentNode.SelectSingleNode(nImage);
+                    if (recieveImage != null)
+                    {
+                        string sImg = recieveImage.InnerHtml;
+                        string[] substrings = sImg.Split('"');
+                        filmImage.Load(substrings[11]);
+                        filmImage.Show();
+                    }
+                }     
 
                 recieceInfo.DataSource = table;
             }
