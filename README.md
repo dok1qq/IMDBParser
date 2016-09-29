@@ -1,6 +1,6 @@
 # IMDB films parser
 
-# h3 Screenshots
+# Screenshots
 
 ![Batman vs Superman](http://s8.hostingkartinok.com/uploads/images/2016/09/68d69b60672089c779ef10951006cf86.jpg)
 

@@ -98,7 +98,7 @@ namespace IMDBParser
         {
             if (filmTextID.Text != "")
             {
-                showInformationOfFilm("title", filmTextID.Text);
+                ShowInformationOfFilm("title", filmTextID.Text);
             }
 
         }
@@ -115,11 +115,11 @@ namespace IMDBParser
                 string text = cell.InnerHtml;
                 string[] substrings = text.Split('/');
 
-                showInformationOfFilm(substrings[1], substrings[2]);
+                ShowInformationOfFilm(substrings[1], substrings[2]);
             }
         }
 
-        void showInformationOfFilm(string property, string id)
+        void ShowInformationOfFilm(string property, string id)
         {
             table.Clear();
             filmImage.Hide();
