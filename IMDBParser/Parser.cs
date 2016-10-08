@@ -1,12 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using HtmlAgilityPack;
+using LiteDB;
 
 namespace IMDBParser
 {
+    public class Film
+    {
+        public string id { get; set; }
+        public string title { get; set; }
+        public string rating { get; set; }
+        public string description { get; set; }
+        public string creator { get; set; }
+        public string image { get; set; }
+    }
+
     class Parser: Form
     {
         private Button filmInfo;
@@ -98,7 +110,7 @@ namespace IMDBParser
         {
             if (filmTextID.Text != "")
             {
-                ShowInformationOfFilm("title", filmTextID.Text);
+                GetInfoOfFilm("title", filmTextID.Text);
             }
 
         }
@@ -115,69 +127,120 @@ namespace IMDBParser
                 string text = cell.InnerHtml;
                 string[] substrings = text.Split('/');
 
-                ShowInformationOfFilm(substrings[1], substrings[2]);
+                GetInfoOfFilm(substrings[1], substrings[2]);
             }
         }
 
-        void ShowInformationOfFilm(string property, string id)
+        void GetInfoOfFilm(string property, string _id)
+        {
+            Film film = CheckFilmInDB(_id);
+
+            if (film != null)
+            {
+                ShowFilm(film);
+            }
+            else
+            {
+                HtmlWeb webId = new HtmlWeb();
+
+                HtmlAgilityPack.HtmlDocument doc = webId.Load("http://www.imdb.com/" + property + "/" + _id);
+
+                if (doc != null)
+                {
+                    string recieveTitle = "";
+                    string recieveRating = "";
+                    string recieveDescription = "";
+                    string recieveCreator = "";
+                    string resultUrlImage = "";
+
+                    HtmlNode recTitle = doc.DocumentNode.SelectSingleNode(title);
+                    if (recTitle != null)
+                    {
+                        recieveTitle = recTitle.InnerText;
+                    }
+
+                    HtmlNode recRating = doc.DocumentNode.SelectSingleNode(rating);
+                    if (recRating != null)
+                    {
+                        recieveRating = recRating.InnerText;
+                    }
+
+                    HtmlNode recDescription = doc.DocumentNode.SelectSingleNode(description);
+                    if (recDescription != null)
+                    {
+                        recieveDescription = recDescription.InnerText;
+                    }
+
+                    HtmlNode recCreator = doc.DocumentNode.SelectSingleNode(creator);
+                    if (recCreator != null)
+                    {
+                        recieveCreator = recCreator.InnerHtml;
+                    }
+
+
+                    if (property.Equals("title"))
+                    {
+                        string sImg = doc.DocumentNode.SelectSingleNode(fImage).InnerHtml;
+                        string[] substrings = sImg.Split('"');
+                        resultUrlImage = substrings[5];
+                    }
+
+                    if (property.Equals("name"))
+                    {
+                        string sImg = doc.DocumentNode.SelectSingleNode(nImage).InnerHtml;
+                        string[] substrings = sImg.Split('"');
+                        resultUrlImage = substrings[11];
+                    }
+
+                    film = new Film
+                    {
+                        id = _id,
+                        title = recieveTitle,
+                        rating = recieveRating,
+                        creator = recieveCreator,
+                        description = recieveDescription,
+                        image = resultUrlImage
+                    };
+
+                    AddFilmInCollection(film);
+                    ShowFilm(film);
+                }
+            }
+        }
+
+        void ShowFilm(Film film)
         {
             table.Clear();
             filmImage.Hide();
-            HtmlWeb webId = new HtmlWeb();
 
-            HtmlAgilityPack.HtmlDocument doc = webId.Load("http://www.imdb.com/" + property + "/" + id);
+            table.Rows.Add("Title", film.title);
+            table.Rows.Add("Rating", film.rating);
+            table.Rows.Add("Desctiption", film.description);
+            table.Rows.Add("Creator", film.creator);
 
-            if (doc != null)
+            filmImage.Load(film.image);
+            filmImage.Show();
+
+            recieceInfo.DataSource = table;
+        }
+
+        private void AddFilmInCollection(Film film)
+        {
+            using (var db = new LiteDatabase(@"MyData.db"))
             {
-                HtmlNode recieveTitle = doc.DocumentNode.SelectSingleNode(title);
-                if (recieveTitle != null)
-                {
-                    table.Rows.Add("Title", recieveTitle.InnerText);
-                }
+                var col = db.GetCollection<Film>("films");
+                col.Insert(film);
+            }
+        }
 
-                HtmlNode recieveRating = doc.DocumentNode.SelectSingleNode(rating);
-                if (recieveRating != null)
-                {
-                    table.Rows.Add("Rating", recieveRating.InnerText);
-                }
+        private Film CheckFilmInDB(string id)
+        {
+            using (var db = new LiteDatabase(@"MyData.db"))
+            {
+                var col = db.GetCollection<Film>("films");
+                Film result = col.Find(film => film.id == id).FirstOrDefault();
 
-                HtmlNode recieveDescription = doc.DocumentNode.SelectSingleNode(description);
-                if (recieveDescription != null)
-                {
-                    table.Rows.Add("Desctiption", recieveDescription.InnerText);
-                }
-
-                HtmlNode recieveCreator = doc.DocumentNode.SelectSingleNode(creator);
-                if (recieveCreator != null)
-                {
-                    table.Rows.Add("Creator", recieveCreator.InnerHtml);
-                }
-
-                if (property.Equals("title"))
-                {
-                    HtmlNode recieveImage = doc.DocumentNode.SelectSingleNode(fImage);
-                    if (recieveImage != null)
-                    {
-                        string sImg = recieveImage.InnerHtml;
-                        string[] substrings = sImg.Split('"');
-                        filmImage.Load(substrings[5]);
-                        filmImage.Show();
-                    }
-                }
-
-                if (property.Equals("name"))
-                {
-                    HtmlNode recieveImage = doc.DocumentNode.SelectSingleNode(nImage);
-                    if (recieveImage != null)
-                    {
-                        string sImg = recieveImage.InnerHtml;
-                        string[] substrings = sImg.Split('"');
-                        filmImage.Load(substrings[11]);
-                        filmImage.Show();
-                    }
-                }     
-
-                recieceInfo.DataSource = table;
+                return result;
             }
         }
     }

@@ -9,4 +9,5 @@ d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.Proper
 d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.csproj.GenerateResource.Cache
 d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.exe
 d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.pdb
-d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.Parser.resources
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\LiteDB.dll
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.Film.resources
