@@ -11,3 +11,10 @@ d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.exe
 d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.pdb
 d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\LiteDB.dll
 d:\Projects\visual studio 2015\IMDBParser\IMDBParser\obj\Debug\IMDBParser.Film.resources
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\Dapper.dll
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\Dapper.xml
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\EntityFramework.dll
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\EntityFramework.SqlServer.dll
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\EntityFramework.xml
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\EntityFramework.SqlServer.xml
+d:\Projects\visual studio 2015\IMDBParser\IMDBParser\bin\Debug\ru\EntityFramework.resources.dll

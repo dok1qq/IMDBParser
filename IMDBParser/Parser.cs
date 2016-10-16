@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
+using System.Data.Entity.Core.Objects;
+using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -11,12 +15,12 @@ namespace IMDBParser
 {
     public class Film
     {
-        public string id { get; set; }
-        public string title { get; set; }
-        public string rating { get; set; }
-        public string description { get; set; }
-        public string creator { get; set; }
-        public string image { get; set; }
+        public string Id { get; set; }
+        public string Title { get; set; }
+        public string Rating { get; set; }
+        public string Description { get; set; }
+        public string Director { get; set; }
+        public string Poster { get; set; }
     }
 
     class Parser: Form
@@ -31,6 +35,8 @@ namespace IMDBParser
         private Label searchLabel;
         private DataGridView recieceInfo;
         private DataTable table;
+        private Label selectLabel;
+        private ComboBox comboBox;
 
         private string title = "//*[@itemprop='name']";
         private string rating = "//*[@itemprop='ratingValue']";
@@ -90,6 +96,17 @@ namespace IMDBParser
             table.Columns.Add("Name", typeof(string));
             table.Columns.Add("Property", typeof(string));
 
+            selectLabel = new Label();
+            selectLabel.Location = new System.Drawing.Point(32, 200);
+            selectLabel.Text = "Directors:";
+            selectLabel.Size = new System.Drawing.Size(200, 13);
+
+            comboBox = new ComboBox();
+            comboBox.Location = new System.Drawing.Point(32, 230);
+            comboBox.Size = new System.Drawing.Size(159, 20);
+            comboBox.SelectedIndexChanged += new System.EventHandler(this.comboBox_SelectedIndexChanged);
+
+            this.Load += new System.EventHandler(this.Parser_Load);
             this.Controls.Add(filmLabel);
             this.Controls.Add(searchLabel);
             this.Controls.Add(filmTextID);
@@ -98,6 +115,8 @@ namespace IMDBParser
             this.Controls.Add(searchInfo);
             this.Controls.Add(filmImage);
             this.Controls.Add(recieceInfo);
+            this.Controls.Add(selectLabel);
+            this.Controls.Add(comboBox);
         }
 
         static void Main()
@@ -106,13 +125,61 @@ namespace IMDBParser
         }
 
         // Метод-обработчик событий
+        private void Parser_Load(object sender, EventArgs e)
+        {
+            var directors = GetDirectors();
+            foreach (var director in directors)
+            {
+                if (director.FIO != "")
+                    comboBox.Items.Add(director.FIO);
+            }
+        }
+
+        private List<Director> GetDirectors()
+        {
+            var context = new IMDBContext();
+            return context.Directors.ToList();
+        }
+
+        // Метод-обработчик событий
+        private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string directorName = comboBox.SelectedItem as string;
+            ICollection<Movies> movies = GetMoviesByName(directorName);
+
+            if (movies != null)
+            {
+                table.Clear();
+                filmImage.Hide();
+                foreach (var movie in movies)
+                {
+                    table.Rows.Add("Movie", movie.Title);
+                    if (movie.Poster != null)
+                        filmImage.Load(movie.Poster);
+                }
+
+                filmImage.Show();
+                recieceInfo.DataSource = table;
+            }
+        }
+        
+        private Guid GetDirectorIdByName(string directorName)
+        {
+            var context = new IMDBContext();
+            return context.Directors.Single(d => d.FIO == directorName).Id;
+        }
+
+        private ICollection<Movies> GetMoviesByName(string directorName)
+        {
+            var context = new IMDBContext();
+            var director = context.Directors.Single(d => d.FIO == directorName);
+            return director.Movies;
+        }
+
+        // Метод-обработчик событий
         void GetInfoButtonEventHandler(object sender, EventArgs e)
         {
-            if (filmTextID.Text != "")
-            {
-                GetInfoOfFilm("title", filmTextID.Text);
-            }
-
+            if (filmTextID.Text != "") GetInfoOfFilm("title", filmTextID.Text);
         }
 
         // Метод-обработчик событий
@@ -192,20 +259,70 @@ namespace IMDBParser
                         resultUrlImage = substrings[11];
                     }
 
-                    film = new Film
+                    film = new Film()
                     {
-                        id = _id,
-                        title = recieveTitle,
-                        rating = recieveRating,
-                        creator = recieveCreator,
-                        description = recieveDescription,
-                        image = resultUrlImage
+                        Id = _id,
+                        Title = recieveTitle,
+                        Rating = recieveRating,
+                        Director = recieveCreator,
+                        Description = recieveDescription,
+                        Poster = resultUrlImage
                     };
 
+                    using (IMDBContext context = new IMDBContext())
+                    {
+                        bool checkDirectorInDb = CheckDirectorInDb(recieveCreator);
+                        if (checkDirectorInDb)
+                        {
+                            Guid dirId = GetDirectorIdByName(recieveCreator);
+                            context.Movies1.Add(new Movies
+                            {
+                                Id = Guid.NewGuid(),
+                                Title = recieveTitle,
+                                Rating = recieveRating,
+                                DirectorId = dirId,
+                                Description = recieveDescription,
+                                Poster = resultUrlImage
+                            });
+                        }
+                        else
+                        {
+                            Guid newId = Guid.NewGuid();
+                            context.Directors.Add(new Director
+                            {
+                                Id = newId,
+                                FIO = recieveCreator
+                            });
+
+                            context.Movies1.Add(new Movies
+                            {
+                                Id = Guid.NewGuid(),
+                                Title = recieveTitle,
+                                Rating = recieveRating,
+                                DirectorId = newId,
+                                Description = recieveDescription,
+                                Poster = resultUrlImage
+                            });
+                        }
+
+                        context.SaveChanges();
+                    }
+                    
                     AddFilmInCollection(film);
                     ShowFilm(film);
                 }
             }
+        }
+
+        private bool CheckDirectorInDb(string director)
+        {
+            var context = new IMDBContext();
+            var dir = context.Directors.Where(d => d.FIO == director).FirstOrDefault();
+            if (dir != null)
+            {
+                return true;
+            }
+            return false;
         }
 
         void ShowFilm(Film film)
@@ -213,13 +330,16 @@ namespace IMDBParser
             table.Clear();
             filmImage.Hide();
 
-            table.Rows.Add("Title", film.title);
-            table.Rows.Add("Rating", film.rating);
-            table.Rows.Add("Desctiption", film.description);
-            table.Rows.Add("Creator", film.creator);
+            table.Rows.Add("Title", film.Title);
+            table.Rows.Add("Rating", film.Rating);
+            table.Rows.Add("Desctiption", film.Description);
+            table.Rows.Add("Creator", film.Director);
 
-            filmImage.Load(film.image);
-            filmImage.Show();
+            if (film.Poster != null)
+            {
+                filmImage.Load(film.Poster);
+                filmImage.Show();
+            }
 
             recieceInfo.DataSource = table;
         }
@@ -238,9 +358,7 @@ namespace IMDBParser
             using (var db = new LiteDatabase(@"MyData.db"))
             {
                 var col = db.GetCollection<Film>("films");
-                Film result = col.Find(film => film.id == id).FirstOrDefault();
-
-                return result;
+                return col.Find(film => film.Id == id).FirstOrDefault();
             }
         }
     }

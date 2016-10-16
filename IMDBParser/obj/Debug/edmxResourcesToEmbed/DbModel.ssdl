@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Schema Namespace="Хранилище IMDBModel" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityType Name="Directors">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="FIO" Type="nvarchar" MaxLength="150" />
+  </EntityType>
+  <EntityType Name="Movies">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="Title" Type="nvarchar" MaxLength="200" />
+    <Property Name="Description" Type="nvarchar(max)" />
+    <Property Name="Rating" Type="nvarchar" MaxLength="50" />
+    <Property Name="Poster" Type="nvarchar(max)" />
+    <Property Name="DirectorId" Type="uniqueidentifier" Nullable="false" />
+  </EntityType>
+  <Association Name="FK_Movies_Directors">
+    <End Role="Directors" Type="Self.Directors" Multiplicity="1" />
+    <End Role="Movies" Type="Self.Movies" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Directors">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Movies">
+        <PropertyRef Name="DirectorId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <EntityContainer Name="Хранилище IMDBModelContainer">
+    <EntitySet Name="Directors" EntityType="Self.Directors" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="Movies" EntityType="Self.Movies" Schema="dbo" store:Type="Tables" />
+    <AssociationSet Name="FK_Movies_Directors" Association="Self.FK_Movies_Directors">
+      <End Role="Directors" EntitySet="Directors" />
+      <End Role="Movies" EntitySet="Movies" />
+    </AssociationSet>
+  </EntityContainer>
+</Schema>
