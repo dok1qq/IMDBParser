@@ -166,7 +166,12 @@ namespace IMDBParser
         private Guid GetDirectorIdByName(string directorName)
         {
             var context = new IMDBContext();
-            return context.Directors.Single(d => d.FIO == directorName).Id;
+            var rec = context.Directors.FirstOrDefault(d => d.FIO == directorName);
+            if (rec != null)
+            {
+                return rec.Id;
+            }
+            return Guid.Empty;
         }
 
         private ICollection<Movies> GetMoviesByName(string directorName)
@@ -271,11 +276,12 @@ namespace IMDBParser
 
                     using (IMDBContext context = new IMDBContext())
                     {
-                        bool checkDirectorInDb = CheckDirectorInDb(recieveCreator);
-                        if (checkDirectorInDb)
+                        Guid dirId = GetDirectorIdByName(recieveCreator);
+
+                        if (dirId != Guid.Empty)
                         {
-                            Guid dirId = GetDirectorIdByName(recieveCreator);
-                            context.Movies1.Add(new Movies
+                            context.Directors.Single(d => d.FIO == recieveCreator)
+                                .Movies.Add(new Movies
                             {
                                 Id = Guid.NewGuid(),
                                 Title = recieveTitle,
@@ -293,7 +299,7 @@ namespace IMDBParser
                                 Id = newId,
                                 FIO = recieveCreator
                             });
-
+                      
                             context.Movies1.Add(new Movies
                             {
                                 Id = Guid.NewGuid(),
@@ -314,17 +320,6 @@ namespace IMDBParser
             }
         }
 
-        private bool CheckDirectorInDb(string director)
-        {
-            var context = new IMDBContext();
-            var dir = context.Directors.Where(d => d.FIO == director).FirstOrDefault();
-            if (dir != null)
-            {
-                return true;
-            }
-            return false;
-        }
-
         void ShowFilm(Film film)
         {
             table.Clear();
@@ -332,7 +327,7 @@ namespace IMDBParser
 
             table.Rows.Add("Title", film.Title);
             table.Rows.Add("Rating", film.Rating);
-            table.Rows.Add("Desctiption", film.Description);
+            table.Rows.Add("Description", film.Description);
             table.Rows.Add("Creator", film.Director);
 
             if (film.Poster != null)
@@ -358,7 +353,7 @@ namespace IMDBParser
             using (var db = new LiteDatabase(@"MyData.db"))
             {
                 var col = db.GetCollection<Film>("films");
-                return col.Find(film => film.Id == id).FirstOrDefault();
+                return col.FindOne(film => film.Id == id);
             }
         }
     }
