@@ -184,7 +184,14 @@ namespace IMDBParser
         // Метод-обработчик событий
         void GetInfoButtonEventHandler(object sender, EventArgs e)
         {
-            if (filmTextID.Text != "") GetInfoOfFilm("title", filmTextID.Text);
+            if (filmTextID.Text != "")
+            {
+                Film film = GetInfoOfFilm("title", filmTextID.Text);
+                if (film != null)
+                {
+                    ShowFilm(film);
+                }
+            }
         }
 
         // Метод-обработчик событий
@@ -199,17 +206,21 @@ namespace IMDBParser
                 string text = cell.InnerHtml;
                 string[] substrings = text.Split('/');
 
-                GetInfoOfFilm(substrings[1], substrings[2]);
+                Film film = GetInfoOfFilm(substrings[1], substrings[2]);
+                if (film != null)
+                {
+                    ShowFilm(film);
+                }
             }
         }
 
-        void GetInfoOfFilm(string property, string _id)
+        Film GetInfoOfFilm(string property, string _id)
         {
             Film film = CheckFilmInDB(_id);
 
             if (film != null)
             {
-                ShowFilm(film);
+                return film;
             }
             else
             {
@@ -274,49 +285,54 @@ namespace IMDBParser
                         Poster = resultUrlImage
                     };
 
-                    using (IMDBContext context = new IMDBContext())
-                    {
-                        Guid dirId = GetDirectorIdByName(recieveCreator);
-
-                        if (dirId != Guid.Empty)
-                        {
-                            context.Directors.Single(d => d.FIO == recieveCreator)
-                                .Movies.Add(new Movies
-                            {
-                                Id = Guid.NewGuid(),
-                                Title = recieveTitle,
-                                Rating = recieveRating,
-                                DirectorId = dirId,
-                                Description = recieveDescription,
-                                Poster = resultUrlImage
-                            });
-                        }
-                        else
-                        {
-                            Guid newId = Guid.NewGuid();
-                            context.Directors.Add(new Director
-                            {
-                                Id = newId,
-                                FIO = recieveCreator
-                            });
-                      
-                            context.Movies1.Add(new Movies
-                            {
-                                Id = Guid.NewGuid(),
-                                Title = recieveTitle,
-                                Rating = recieveRating,
-                                DirectorId = newId,
-                                Description = recieveDescription,
-                                Poster = resultUrlImage
-                            });
-                        }
-
-                        context.SaveChanges();
-                    }
-                    
                     AddFilmInCollection(film);
-                    ShowFilm(film);
+                    AddFilmInSQLCollenction(film);
+                    return film;
                 }
+                return null;
+            }
+        }
+
+        private void AddFilmInSQLCollenction(Film film)
+        {
+            using (IMDBContext context = new IMDBContext())
+            {
+                Guid dirId = GetDirectorIdByName(film.Director);
+
+                if (dirId != Guid.Empty)
+                {
+                    context.Directors.Single(d => d.FIO == film.Director)
+                        .Movies.Add(new Movies
+                        {
+                            Id = Guid.NewGuid(),
+                            Title = film.Title,
+                            Rating = film.Rating,
+                            DirectorId = dirId,
+                            Description = film.Description,
+                            Poster = film.Poster
+                        });
+                }
+                else
+                {
+                    Guid newId = Guid.NewGuid();
+                    context.Directors.Add(new Director
+                    {
+                        Id = newId,
+                        FIO = film.Director
+                    });
+
+                    context.Movies1.Add(new Movies
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = film.Title,
+                        Rating = film.Rating,
+                        DirectorId = newId,
+                        Description = film.Description,
+                        Poster = film.Poster
+                    });
+                }
+
+                context.SaveChanges();
             }
         }
 
